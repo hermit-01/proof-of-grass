@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proof of Grass - photo checker test</title>
+<style>
+  :root { --bg: #f6f7f2; --fg: #1d2a1d; --muted: #5d6b5d; --card: #fff; --ok: #1f7a3a; --bad: #b3261e; --line: #d9ded3; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121611; --fg: #e6ece3; --muted: #9aa797; --card: #1b2119; --ok: #6fd08c; --bad: #ff8a80; --line: #2e372b; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 16px/1.45 system-ui, sans-serif; max-width: 640px; margin-inline: auto; }
+  h1 { font-size: 1.3rem; margin: 0 0 4px; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); font-size: .9rem; }
+  button, select, label.file { font: inherit; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--fg); width: 100%; margin: 6px 0; }
+  button.primary, label.file { background: var(--ok); color: #fff; border: 0; text-align: center; display: block; }
+  button:disabled { opacity: .5; }
+  input[type=file] { display: none; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 10px 0; display: flex; gap: 12px; }
+  .card img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; flex: none; }
+  .pass { color: var(--ok); font-weight: 700; }
+  .fail { color: var(--bad); font-weight: 700; }
+  #status { font-weight: 600; }
+  pre { white-space: pre-wrap; font-size: .8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<h1>Photo checker test (POCO)</h1>
+<p class="muted">Tests whether this phone can check a quest photo with an open AI model (CLIP), on the phone itself. Your photos are never uploaded.</p>
+
+<p id="device" class="muted"></p>
+<label for="engine">1. Engine</label>
+<select id="engine">
+  <option value="wasm">Processor (CPU), 85 MB, the safe choice</option>
+  <option value="webgpu">Graphics chip (GPU), 61 MB, experimental</option>
+</select>
+<button id="load" class="primary">Load the checker (one-time download, use Wi-Fi)</button>
+<p class="muted">To try the other engine afterwards, reload the page and pick it.</p>
+<p id="status">Not loaded yet.</p>
+
+<label for="quest">2. Today's quest</label>
+<select id="quest"></select>
+<label class="file" id="pickLabel" for="pick" aria-disabled="true">3. Pick photos (gallery or camera)</label>
+<input id="pick" type="file" accept="image/*" multiple disabled>
+<p id="summary" class="muted"></p>
+<div id="results"></div>
+<pre id="log"></pre>
+
+<script type="module">
+const TJS = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1';
+const MODEL = 'Xenova/clip-vit-base-patch32';
+const OUTDOOR_MIN = 0.35;
+const $ = (id) => document.getElementById(id);
+const log = (m) => { $('log').textContent += m + '\n'; };
+window.addEventListener('error', (e) => log('ERROR: ' + e.message));
+window.addEventListener('unhandledrejection', (e) => log('ERROR: ' + (e.reason?.message ?? e.reason)));
+
+$('device').textContent = `Cores: ${navigator.hardwareConcurrency ?? '?'} · RAM: ${navigator.deviceMemory ?? '?'} GB · ${navigator.userAgent.match(/Android [\d.]+|Windows NT [\d.]+|iPhone OS [\d_]+/)?.[0] ?? ''} · Chrome ${navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] ?? '?'}`;
+
+const embeds = await (await fetch('embeds.json')).json();
+const questKeys = Object.keys(embeds.quests);
+$('quest').innerHTML = questKeys.map((k) => `<option value="${k}">${k}</option>`).join('');
+
+let T, processor, vision;
+const times = [];
+$('load').onclick = async () => {
+  $('load').disabled = true;
+  $('engine').disabled = true;
+  const device = $('engine').value;
+  if (device === 'webgpu' && !navigator.gpu) { $('status').textContent = 'This browser has no WebGPU. Reload and use the processor engine.'; return; }
+  const t0 = performance.now();
+  try {
+    T = await import(TJS);
+    T.env.allowLocalModels = false;
+    const seen = {};
+    const progress_callback = (p) => {
+      if (p.status === 'progress' && p.total) {
+        seen[p.file] = [p.loaded, p.total];
+        const [l, t] = Object.values(seen).reduce(([a, b], [c, d]) => [a + c, b + d], [0, 0]);
+        $('status').textContent = `Downloading… ${(l / 1e6).toFixed(0)} / ${(t / 1e6).toFixed(0)} MB`;
+      }
+    };
+    processor = await T.AutoProcessor.from_pretrained(MODEL);
+    vision = await T.CLIPVisionModelWithProjection.from_pretrained(MODEL, { dtype: device === 'webgpu' ? 'q4' : 'q8', device, progress_callback });
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    $('status').textContent = `Ready (${device === 'webgpu' ? 'GPU' : 'CPU'}) in ${secs} s. Now pick a quest and some photos.`;
+    log(`loaded ${device} in ${secs} s`);
+    $('pick').disabled = false;
+    $('pickLabel').removeAttribute('aria-disabled');
+  } catch (err) {
+    $('status').textContent = 'Load failed: ' + err.message;
+    log('LOAD ERROR: ' + (err.stack ?? err));
+    $('load').disabled = false;
+    $('engine').disabled = false;
+  }
+};
+
+const dot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+const softmax = (xs) => { const m = Math.max(...xs); const e = xs.map((x) => Math.exp(x - m)); const s = e.reduce((a, b) => a + b); return e.map((x) => x / s); };
+
+async function check(file) {
+  // Shrink big camera photos first: CLIP only looks at 224 x 224 anyway.
+  const tDecode = performance.now();
+  const bmp = await createImageBitmap(file, { resizeWidth: 448, resizeQuality: 'medium' });
+  const canvas = new OffscreenCanvas(bmp.width, bmp.height);
+  canvas.getContext('2d').drawImage(bmp, 0, 0);
+  const image = T.RawImage.fromCanvas(canvas);
+  const tModel = performance.now();
+  const { image_embeds } = await vision(await processor(image));
+  const tEnd = performance.now();
+  const v = Array.from(image_embeds.data);
+  const n = Math.hypot(...v);
+  for (let i = 0; i < v.length; i++) v[i] /= n;
+  const prob = softmax(questKeys.map((k) => 100 * dot(v, embeds.quests[k])));
+  const scene = softmax([...embeds.outdoor, ...embeds.indoor].map((e) => 100 * dot(v, e)));
+  const pOut = scene.slice(0, embeds.outdoor.length).reduce((a, b) => a + b);
+  const ranked = questKeys.map((k, i) => [k, prob[i]]).sort((a, b) => b[1] - a[1]);
+  return { ranked, pOut, checkMs: tEnd - tModel, totalMs: tEnd - tDecode, url: URL.createObjectURL(file) };
+}
+
+$('pick').onchange = async (e) => {
+  const quest = $('quest').value;
+  for (const file of e.target.files) {
+    const r = await check(file);
+    times.push(r.checkMs);
+    const ok = r.ranked[0][0] === quest && r.pOut >= OUTDOOR_MIN;
+    const why = r.ranked[0][0] !== quest ? `looks more like "${r.ranked[0][0]}"` : r.pOut < OUTDOOR_MIN ? 'looks indoors' : 'quest found, outdoors';
+    $('results').insertAdjacentHTML('afterbegin', `<div class="card"><img src="${r.url}" alt="">
+      <div><div class="${ok ? 'pass' : 'fail'}">${ok ? 'PASS' : 'FAIL'}: ${quest} (${why})</div>
+      <div>Top: ${r.ranked.slice(0, 3).map(([k, p]) => `${k} ${(p * 100).toFixed(0)}%`).join(', ')}</div>
+      <div>Outdoors: ${(r.pOut * 100).toFixed(0)}%</div>
+      <div class="muted">Check took ${(r.checkMs / 1000).toFixed(2)} s (${(r.totalMs / 1000).toFixed(2)} s incl. resizing)</div></div></div>`);
+    const s = [...times].sort((a, b) => a - b);
+    $('summary').textContent = `${$('engine').value === 'webgpu' ? 'GPU' : 'CPU'} · ${times.length} photo(s) checked · median ${(s[s.length >> 1] / 1000).toFixed(2)} s · slowest ${(s.at(-1) / 1000).toFixed(2)} s`;
+  }
+  e.target.value = '';
+};
+</script>
+</body>
+</html>
