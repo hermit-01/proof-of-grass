@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import express from 'express';
+import { authRoutes } from './routes/auth.js';
+import { meRoutes } from './routes/me.js';
 
 // options: { jwtSecret, secureCookies, bcryptCost, loginLimit, now, clientDist }. Routers receive it as `config`.
 export function createApp(options = {}) {
@@ -16,6 +18,8 @@ export function createApp(options = {}) {
   app.use(cookieParser());
 
   app.get('/api/health', (req, res) => res.json({ ok: true }));
+  app.use('/api/auth', authRoutes(config));
+  app.use('/api/me', meRoutes(config));
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
   const indexHtml = config.clientDist && path.join(config.clientDist, 'index.html');
