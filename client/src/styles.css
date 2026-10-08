@@ -57,3 +57,17 @@ button.link { background: none; border: 0; color: var(--accent); text-decoration
 .day-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .day-picker button { padding: 12px 0; }
 .day-picker button.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+/* Home and Check */
+.quests { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.quests li { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 600; }
+.dots { display: flex; gap: 8px; margin: 0 0 6px; }
+.dot { width: 18px; height: 18px; border-radius: 50%; background: var(--dot-off); }
+.dot.on { background: var(--accent); }
+.big { font-size: 1.2rem; font-weight: 700; }
+button.big { padding: 18px; font-size: 1.1rem; }
+.done { text-align: center; font-weight: 700; color: var(--ok); padding: 18px; }
+.note { background: var(--card); border: 1px dashed var(--line); border-radius: 10px; padding: 8px 12px; font-size: 0.9rem; }
+.preview { width: 100%; max-height: 40dvh; object-fit: cover; border-radius: 14px; }
+progress { width: 100%; }
+.result.pass .big { color: var(--ok); }
