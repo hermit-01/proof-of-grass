@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api.js';
-import { USER_KEY, WALKS_KEY, resolveSession } from './session.js';
+import { USER_KEY, WALKS_KEY, initialAuthState, resolveSession } from './session.js';
 
 function memoryStore(initial = {}) {
   const data = new Map(Object.entries(initial));
@@ -29,5 +29,16 @@ describe('resolveSession', () => {
 
   it('shows the welcome screen offline if nobody has logged in on this phone', async () => {
     await expect(resolveSession({ ...memoryStore(), fetchMe: failWith(0) })).resolves.toEqual({ user: null, offline: true });
+  });
+});
+
+describe('initialAuthState', () => {
+  it('opens straight to Home for the user saved on this phone, without waiting for the server', () => {
+    const store = memoryStore({ [USER_KEY]: ASHA });
+    expect(initialAuthState(store.load)).toEqual({ user: ASHA, loading: false });
+  });
+
+  it('waits for the server only when nobody is saved on this phone', () => {
+    expect(initialAuthState(memoryStore().load)).toEqual({ user: null, loading: true });
   });
 });

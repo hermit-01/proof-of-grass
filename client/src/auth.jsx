@@ -1,14 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { api } from './api.js';
 import { clearPending, flushPending } from './offline/queue.js';
-import { USER_KEY, WALKS_KEY, resolveSession } from './session.js';
+import { USER_KEY, WALKS_KEY, initialAuthState, resolveSession } from './session.js';
 import { removeKey, saveJSON } from './storage.js';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUserState] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [start] = useState(initialAuthState);
+  const [user, setUserState] = useState(start.user);
+  const [loading, setLoading] = useState(start.loading);
   // Grows whenever queued walks reach the server, so screens know to reload.
   const [syncTick, setSyncTick] = useState(0);
   const [syncNotice, setSyncNotice] = useState('');
