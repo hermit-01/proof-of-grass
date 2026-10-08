@@ -71,8 +71,8 @@ export default function Settings() {
         <h2>About</h2>
         <p>
           Your photo is checked on this phone by CLIP, an open AI model (OpenAI, MIT licence), running in
-          Transformers.js (Apache-2.0). The photo is never saved or uploaded; the server only learns the date and
-          which quest you found.
+          Transformers.js (Apache-2.0). The photo is never saved or uploaded; the server only learns the date, the
+          time and which quest you found.
         </p>
         <p className="muted">Logged in as {user.email}.</p>
       </section>
