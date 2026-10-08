@@ -30,6 +30,21 @@ describe('recordWalk', () => {
     await expect(recordWalk(walk('2026-10-08'), 'u1', failWith(400, 'That date is in the future'))).rejects.toMatchObject({ status: 400 });
     expect(await listPending()).toEqual([]);
   });
+
+  it('keeps the walk on the phone while the post is still hanging, so closing the app cannot lose it', async () => {
+    let finish;
+    const pending = recordWalk(walk('2026-10-08'), 'u1', () => new Promise((resolve) => { finish = resolve; }));
+    await new Promise((r) => setTimeout(r, 50)); // the post is in flight and never answered yet
+    expect(await listPending()).toEqual([{ ...walk('2026-10-08'), userId: 'u1' }]);
+    finish();
+    await expect(pending).resolves.toBe('saved');
+    expect(await listPending()).toEqual([]);
+  });
+
+  it('keeps the walk when the session has expired (401), to send after the next login', async () => {
+    await expect(recordWalk(walk('2026-10-08'), 'u1', failWith(401, 'Please log in'))).resolves.toBe('queued');
+    expect(await listPending()).toEqual([{ ...walk('2026-10-08'), userId: 'u1' }]);
+  });
 });
 
 describe('flushPending', () => {

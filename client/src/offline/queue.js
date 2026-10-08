@@ -38,19 +38,20 @@ export const clearPending = () => inStore('readwrite', (store) => store.clear())
 // No network, or a server error (Render waking up): worth trying again later.
 const retryable = (err) => err.status === 0 || err.status >= 500;
 
-// Sends a counted walk. If it can't get through, keeps it on the phone. Returns 'saved' or 'queued'.
+// Saves a counted walk on the phone first, so closing the app mid-upload can't lose it, then sends it.
+// Returns 'saved' (the server has it) or 'queued' (it stays on the phone for the next sync).
 export async function recordWalk(walk, userId, post = postWalk) {
+  await addPending({ ...walk, userId });
   try {
     await post(walk);
-    return 'saved';
   } catch (err) {
+    if (retryable(err) || err.status === 401) return 'queued'; // no signal, server down, or logged out
+    await removePending(walk.date);
     if (err.status === 409) return 'saved'; // already counted for that day
-    if (retryable(err)) {
-      await addPending({ ...walk, userId });
-      return 'queued';
-    }
     throw err;
   }
+  await removePending(walk.date);
+  return 'saved';
 }
 
 // Sends what's waiting, oldest first. A walk the server refuses (e.g. 400: more than 2 days late) is dropped

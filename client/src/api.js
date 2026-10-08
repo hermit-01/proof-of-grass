@@ -26,12 +26,19 @@ function changeSlow(delta) {
   for (const listener of slowListeners) listener(slowCount > 0);
 }
 
-export async function api(path, { method = 'GET', body } = {}) {
+// How long a walk upload may take before it counts as "no signal" and stays queued on the phone.
+export const WALK_TIMEOUT_MS = 15000;
+
+// timeoutMs (optional): give up after this long and treat it as no connection (status 0).
+export async function api(path, { method = 'GET', body, timeoutMs } = {}) {
   const init = { method, credentials: 'same-origin' };
   if (body !== undefined) {
     init.headers = { 'Content-Type': 'application/json' };
     init.body = JSON.stringify(body);
   }
+  const controller = timeoutMs ? new AbortController() : null;
+  if (controller) init.signal = controller.signal;
+  const giveUp = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   let slow = false;
   const timer = setTimeout(() => {
     slow = true;
@@ -49,8 +56,9 @@ export async function api(path, { method = 'GET', body } = {}) {
     return data;
   } finally {
     clearTimeout(timer);
+    clearTimeout(giveUp);
     if (slow) changeSlow(-1);
   }
 }
 
-export const postWalk = (walk) => api('/api/walks', { method: 'POST', body: walk });
+export const postWalk = (walk) => api('/api/walks', { method: 'POST', body: walk, timeoutMs: WALK_TIMEOUT_MS });

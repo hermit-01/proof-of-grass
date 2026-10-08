@@ -36,8 +36,11 @@ export default function Check({ file, onRetake, onClose }) {
         });
         const { date, today, result } = judgePhoto(embedding, await getEmbeds(), checkedAt);
         if (!result.pass) return show({ step: 'fail', message: messageFor(result, today) });
+        // Show the result at once; the walk is already safe on the phone while it uploads.
+        const message = messageFor(result, today, timeLabel(checkedAt));
+        show({ step: 'pass', message, saved: 'saving' });
         const saved = await recordWalk({ date, quest: result.quest, checkedAt: new Date(checkedAt).toISOString() }, user.id);
-        show({ step: 'pass', message: messageFor(result, today, timeLabel(checkedAt)), saved });
+        show({ step: 'pass', message, saved });
       } catch (err) {
         show({ step: 'error', message: err.message });
       }
@@ -67,6 +70,7 @@ export default function Check({ file, onRetake, onClose }) {
       {state.step === 'pass' && (
         <div className="card stack result pass" role="status">
           <p className="big">{state.message}</p>
+          {state.saved === 'saving' && <p className="muted">Saving…</p>}
           {state.saved === 'queued' && (
             <p className="muted">No signal right now, so it's saved on this phone. It will sync when you're back online.</p>
           )}

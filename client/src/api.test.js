@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, SLOW_MS, api, onSlowChange } from './api.js';
+import { ApiError, SLOW_MS, api, onSlowChange, postWalk } from './api.js';
 
 const reply = (status, body) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
 
@@ -53,5 +53,29 @@ describe('api', () => {
     await pending;
     expect(seen).toEqual([true, false]);
     stop();
+  });
+
+  it('gives up after timeoutMs and reports it as no connection (weak signal outdoors)', async () => {
+    vi.useFakeTimers();
+    // Like a real hung request: it only ends if something aborts it.
+    vi.stubGlobal('fetch', vi.fn((path, init) => new Promise((resolve, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
+    })));
+    let settled = false;
+    const outcome = api('/api/walks', { method: 'POST', body: {}, timeoutMs: 15000 }).catch((e) => e).finally(() => { settled = true; });
+    await vi.advanceTimersByTimeAsync(14999);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(settled).toBe(true);
+    const err = await outcome;
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(0);
+  });
+
+  it('sends walks with a timeout, so a hung request can be kept on the phone instead', async () => {
+    const fetch = vi.fn(async () => reply(201, { walk: {} }));
+    vi.stubGlobal('fetch', fetch);
+    await postWalk({ date: '2026-10-08', quest: 'sky', checkedAt: '2026-10-08T06:00:00.000Z' });
+    expect(fetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
   });
 });

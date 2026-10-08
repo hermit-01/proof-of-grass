@@ -46,15 +46,23 @@ export function AuthProvider({ children }) {
     if (synced || dropped.length) setSyncTick((n) => n + 1);
   }, [userId]);
 
-  // Send waiting walks when the app opens, and whenever the phone gets signal back.
+  // Send waiting walks when the app opens, when the phone gets signal back, and when the app comes back
+  // to the front (a walk that timed out on weak signal is retried then).
   useEffect(() => {
     sync();
     const onOnline = () => {
       refresh();
       sync();
     };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') sync();
+    };
     window.addEventListener('online', onOnline);
-    return () => window.removeEventListener('online', onOnline);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [sync, refresh]);
 
   const logout = useCallback(async () => {
