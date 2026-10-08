@@ -2,8 +2,11 @@ import { randomInt } from 'node:crypto';
 import { Router } from 'express';
 import { Group } from '../models/Group.js';
 import { User } from '../models/User.js';
+import { Walk } from '../models/Walk.js';
+import { buildBoard } from '../board.js';
 import { requireAuth } from '../session.js';
 import { cleanName } from '../validate.js';
+import { addDays, istDate, weekStart } from '../../../shared/week.js';
 
 export const MAX_MEMBERS = 20;
 // A-Z without I and O, so a code read aloud or copied from a screenshot can't be mistaken for 1 or 0.
@@ -59,6 +62,19 @@ export function groupRoutes(config) {
       if ((await User.countDocuments({ groupId })) === 0) await Group.deleteOne({ _id: groupId });
     }
     res.json({ ok: true });
+  });
+
+  router.get('/board', async (req, res) => {
+    const group = req.user.groupId ? await Group.findById(req.user.groupId) : null;
+    if (!group) return res.status(404).json({ error: 'You are not in a group' });
+    const members = await User.find({ groupId: group._id }).sort({ createdAt: 1, _id: 1 });
+    const today = istDate(config.now());
+    const monday = weekStart(today);
+    const walks = await Walk.find({
+      userId: { $in: members.map((m) => m._id) },
+      date: { $gte: addDays(monday, -7), $lte: addDays(monday, 6) },
+    });
+    res.json({ group: groupJSON(group), ...buildBoard({ members, walks, today, meId: req.user._id }) });
   });
 
   return router;
