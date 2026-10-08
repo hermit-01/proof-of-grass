@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
+import { listPending } from '../offline/queue.js';
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7];
 
@@ -10,6 +11,11 @@ export default function Settings() {
   const [days, setDays] = useState(user.pactDaysPerWeek);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [pendingCount, setPendingCount] = useState(0);
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => {
+    listPending().then((p) => setPendingCount(p.length)).catch(() => {});
+  }, []);
 
   async function save(e) {
     e.preventDefault();
@@ -25,6 +31,10 @@ export default function Settings() {
   }
 
   async function doLogout() {
+    if (pendingCount > 0 && !confirming) {
+      setConfirming(true);
+      return;
+    }
     try {
       await logout();
     } catch (err) {
@@ -50,7 +60,13 @@ export default function Settings() {
         {status && <p className="ok" role="status">{status}</p>}
         <button className="primary">Save</button>
       </form>
-      <button onClick={doLogout}>Log out</button>
+      {confirming && (
+        <p className="error" role="alert">
+          {pendingCount === 1 ? "1 walk hasn't synced yet." : `${pendingCount} walks haven't synced yet.`} Logging out
+          deletes {pendingCount === 1 ? 'it' : 'them'} from this phone.
+        </p>
+      )}
+      <button onClick={doLogout}>{confirming ? 'Log out anyway' : 'Log out'}</button>
       <section className="card stack about">
         <h2>About</h2>
         <p>
