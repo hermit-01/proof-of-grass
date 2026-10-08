@@ -1,0 +1,27 @@
+{
+  "name": "proof-of-grass",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A walking pact you prove with a photo quest. An open AI model checks the photo on your phone.",
+  "license": "MIT",
+  "author": "Arihant Kumar (https://github.com/hermit-01)",
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "dev:server": "node --env-file-if-exists=server/.env --watch server/src/index.js",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client",
+    "start": "node --env-file-if-exists=server/.env server/src/index.js",
+    "test": "vitest run",
+    "embeds": "node scripts/make-embeds.mjs",
+    "eval": "node eval/eval.mjs"
+  },
+  "devDependencies": {
+    "@huggingface/transformers": "4.3.1",
+    "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "vite": "^7.3.7"
+  }
+}
