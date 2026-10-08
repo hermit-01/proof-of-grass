@@ -2,6 +2,8 @@ import { Link, Navigate, Route, Routes } from 'react-router';
 import { useAuth } from './auth.jsx';
 import SlowBanner from './components/SlowBanner.jsx';
 import TabBar from './components/TabBar.jsx';
+import Group from './screens/Group.jsx';
+import History from './screens/History.jsx';
 import Home from './screens/Home.jsx';
 import PactSetup from './screens/PactSetup.jsx';
 import Settings from './screens/Settings.jsx';
@@ -40,6 +42,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/setup" element={<PactSetup />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/group" element={<Group />} />
+          <Route path="/history" element={<History />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
