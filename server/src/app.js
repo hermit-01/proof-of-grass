@@ -5,6 +5,7 @@ import express from 'express';
 import { authRoutes } from './routes/auth.js';
 import { groupRoutes } from './routes/groups.js';
 import { meRoutes } from './routes/me.js';
+import { walkRoutes } from './routes/walks.js';
 
 // options: { jwtSecret, secureCookies, bcryptCost, loginLimit, now, clientDist }. Routers receive it as `config`.
 export function createApp(options = {}) {
@@ -22,6 +23,7 @@ export function createApp(options = {}) {
   app.use('/api/auth', authRoutes(config));
   app.use('/api/me', meRoutes(config));
   app.use('/api/groups', groupRoutes(config));
+  app.use('/api/walks', walkRoutes(config));
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
   const indexHtml = config.clientDist && path.join(config.clientDist, 'index.html');
