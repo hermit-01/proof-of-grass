@@ -14,6 +14,7 @@ export default defineConfig({
           hookTimeout: 60000,
         },
       },
+      { test: { name: 'client', include: ['client/src/**/*.test.js'] } },
     ],
   },
 });

@@ -1,0 +1,59 @@
+:root {
+  --bg: #f4f6ef;
+  --fg: #1b261b;
+  --muted: #5b685a;
+  --card: #ffffff;
+  --line: #d8ddd0;
+  --accent: #1f6b3a;
+  --accent-fg: #ffffff;
+  --ok: #1f7a3a;
+  --bad: #b3261e;
+  --dot-off: #cfd6c6;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111511;
+    --fg: #e5ebe2;
+    --muted: #9aa795;
+    --card: #1a2019;
+    --line: #2d362a;
+    --accent: #5fbf7f;
+    --accent-fg: #0d1a10;
+    --ok: #6fd08c;
+    --bad: #ff8a80;
+    --dot-off: #39432f;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+h1 { font-size: 1.5rem; margin: 0; }
+h2 { font-size: 1.1rem; margin: 0; }
+p { margin: 0; }
+.app { min-height: 100dvh; display: flex; flex-direction: column; max-width: 560px; margin: 0 auto; }
+.top { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
+.brand { font-weight: 700; color: var(--fg); text-decoration: none; }
+.icon-link { font-size: 1.4rem; text-decoration: none; color: var(--fg); padding: 4px 8px; }
+main { flex: 1; padding: 0 16px 96px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 0.95rem; }
+input, select { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+button { font: inherit; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+button:disabled { opacity: 0.55; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-fg); border: 0; font-weight: 700; }
+button.link { background: none; border: 0; color: var(--accent); text-decoration: underline; padding: 8px 0; }
+.error { color: var(--bad); }
+.ok { color: var(--ok); }
+.muted { color: var(--muted); font-size: 0.9rem; }
+.banner { background: #fff4c2; color: #4a3b00; padding: 10px 16px; font-size: 0.9rem; }
+.splash { display: grid; place-items: center; min-height: 100dvh; font-weight: 700; font-size: 1.3rem; }
+.welcome { max-width: 480px; margin: 0 auto; padding: 32px 16px; display: flex; flex-direction: column; gap: 16px; }
+.lede { color: var(--muted); }
+.tabs { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; background: var(--card); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+.tabs a { flex: 1; max-width: 186px; text-align: center; padding: 14px 0; color: var(--muted); text-decoration: none; font-weight: 600; }
+.tabs a.active { color: var(--accent); }
+.day-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.day-picker button { padding: 12px 0; }
+.day-picker button.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
