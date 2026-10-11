@@ -2,6 +2,8 @@
 
 A walking pact you prove with a photo. You promise "I walk 4 days a week". Each day brings three quests (say, a tree, a bird and a dog). Step outside, photograph any one of them, and an open AI model checks the photo **on your phone**. The photo is never saved or uploaded.
 
+**Try it:** https://proof-of-grass.onrender.com. It's on free hosting, so the first visit after a quiet spell takes up to a minute to wake the server.
+
 Built for the DEV Hacktoberfest Open-Source AI Challenge, Week 1 ("Touch Grass").
 
 ## How the photo check works
