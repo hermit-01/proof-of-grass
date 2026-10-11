@@ -20,6 +20,8 @@ export function createApp(options = {}) {
   app.use(cookieParser());
 
   app.get('/api/health', (req, res) => res.json({ ok: true }));
+  // TEMPORARY deploy check: is req.ip the visitor's own address behind Render's proxies? Removed after the check.
+  app.get('/api/ip', (req, res) => res.json({ ip: req.ip, ips: req.ips, xff: req.get('x-forwarded-for') || null }));
   app.use('/api/auth', authRoutes(config));
   app.use('/api/me', meRoutes(config));
   app.use('/api/groups', groupRoutes(config));
