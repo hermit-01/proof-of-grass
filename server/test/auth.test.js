@@ -79,14 +79,24 @@ describe('POST /api/auth/login', () => {
     expect(unknown.body).toEqual(wrong.body);
   });
 
-  it("limits attempts per visitor IP, not for everyone behind Render's proxy", async () => {
+  // The chain Render really sends (measured on the live app, 11 Oct): "visitor, Cloudflare, Render's balancer".
+  const viaRender = (visitor) => `${visitor}, 172.69.122.175, 10.31.197.151`;
+
+  it("limits attempts per visitor IP, not for everyone behind Render's proxies", async () => {
     const app = makeApp({ loginLimit: 3 });
-    const attempt = (ip) => request(app).post('/api/auth/login').set('X-Forwarded-For', ip).send({ email: 'nobody@example.com', password: 'not-my-password' });
-    for (let i = 0; i < 3; i++) expect((await attempt('203.0.113.7')).status).toBe(401);
-    const blocked = await attempt('203.0.113.7');
+    const attempt = (xff) => request(app).post('/api/auth/login').set('X-Forwarded-For', xff).send({ email: 'nobody@example.com', password: 'not-my-password' });
+    for (let i = 0; i < 3; i++) expect((await attempt(viaRender('203.0.113.7'))).status).toBe(401);
+    const blocked = await attempt(viaRender('203.0.113.7'));
     expect(blocked.status).toBe(429);
     expect(blocked.body).toEqual({ error: 'Too many login attempts. Try again in 15 minutes.' });
-    expect((await attempt('198.51.100.4')).status).toBe(401);
+    expect((await attempt(viaRender('198.51.100.4'))).status).toBe(401);
+  });
+
+  it('does not let a visitor dodge the limit with a made-up X-Forwarded-For entry', async () => {
+    const app = makeApp({ loginLimit: 3 });
+    const attempt = (xff) => request(app).post('/api/auth/login').set('X-Forwarded-For', xff).send({ email: 'nobody@example.com', password: 'not-my-password' });
+    for (let i = 0; i < 3; i++) expect((await attempt(viaRender('203.0.113.7'))).status).toBe(401);
+    expect((await attempt(viaRender('9.9.9.9, 203.0.113.7'))).status).toBe(429);
   });
 
   it('allows 10 attempts per 15 minutes by default', async () => {

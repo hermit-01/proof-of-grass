@@ -14,8 +14,10 @@ export function createApp(options = {}) {
 
   const app = express();
   app.disable('x-powered-by');
-  // Render puts one proxy in front of the app. This makes req.ip the visitor's own address (the login limit needs it).
-  app.set('trust proxy', 1);
+  // Requests reach the app through Cloudflare and Render's balancer, which send "visitor, Cloudflare, balancer"
+  // (measured on the live app, 11 Oct). Trusting those 3 hops makes req.ip the visitor's own address,
+  // which the login limit needs; anything a visitor adds to the header sits further left and is ignored.
+  app.set('trust proxy', 3);
   app.use(express.json({ limit: '10kb' }));
   app.use(cookieParser());
 
