@@ -52,9 +52,11 @@ describe('classes', () => {
   it('scores 8 quests then 3 decoys, each with a prompt and a label', () => {
     expect(CLASSES).toEqual([...QUESTS, 'road', 'building', 'person']);
     for (const c of CLASSES) {
-      expect(CLASS_PROMPTS[c]).toMatch(/^a photo of /);
+      if (c !== 'person') expect(CLASS_PROMPTS[c]).toMatch(/^a photo of /);
       expect(CLASS_LABELS[c]).toBeTruthy();
     }
     expect(CLASS_PROMPTS.water).toBe('a photo of a lake or river');
+    // With "a photo of a person", selfies taken outside passed as grass or sky (eval: selfie-1, selfie-2).
+    expect(CLASS_PROMPTS.person).toBe('a selfie of a person');
   });
 });

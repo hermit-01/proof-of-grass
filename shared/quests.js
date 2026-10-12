@@ -20,7 +20,8 @@ export const CLASS_PROMPTS = {
   water: 'a photo of a lake or river',
   road: 'a photo of a road',
   building: 'a photo of a building',
-  person: 'a photo of a person',
+  // Not "a photo of a person": on real selfies outside, that scored below the grass or sky behind the face.
+  person: 'a selfie of a person',
 };
 
 // How the app names a class in a sentence: "found: a tree", "get closer to the sky".

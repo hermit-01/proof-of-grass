@@ -1,5 +1,6 @@
 // Runs the real photo check (CLIP vision, q8) and shared/decide.js on labelled photos, and tests the spec's bar:
-//   0 wrong-quest passes · 0 passes on room/office/screen photos · >= 90% of outdoor quest photos pass for their quest.
+//   0 wrong-quest passes · 0 passes on room/office/screen photos · 0 passes on selfies
+//   · >= 90% of outdoor quest photos pass for their quest.
 // Usage: npm run eval            -> table + verdict (exit 0 = bar met, 1 = not met, 2 = photos missing)
 //        npm run eval -- --sweep -> also a grid of other thresholds, to read (never auto-applied)
 import fs from 'node:fs';
@@ -37,6 +38,7 @@ function judge(thresholds = {}) {
   const wrong = [];
   const indoor = [];
   const knownLimit = [];
+  const selfie = [];
   const mainMissed = [];
   let mainTotal = 0;
   for (const { name, label, scores } of rows) {
@@ -45,6 +47,8 @@ function judge(thresholds = {}) {
     if (label.scene === 'in' && passes.length) {
       (GATED_INDOOR.includes(label.kind) ? indoor : knownLimit).push(`${name}:${passes.join('+')}`);
     }
+    // A selfie never counts, even with grass or sky behind you: the photo has to be of the quest.
+    if (label.kind === 'selfie' && passes.length) selfie.push(`${name}:${passes.join('+')}`);
     if (label.scene === 'out' && QUESTS.includes(label.main)) {
       mainTotal++;
       if (!passes.includes(label.main)) mainMissed.push(name);
@@ -52,8 +56,8 @@ function judge(thresholds = {}) {
   }
   const mainPassed = mainTotal - mainMissed.length;
   const mainBar = Math.ceil(0.9 * mainTotal);
-  const met = wrong.length === 0 && indoor.length === 0 && mainPassed >= mainBar;
-  return { wrong, indoor, knownLimit, mainMissed, mainPassed, mainTotal, mainBar, met };
+  const met = wrong.length === 0 && indoor.length === 0 && selfie.length === 0 && mainPassed >= mainBar;
+  return { wrong, indoor, knownLimit, selfie, mainMissed, mainPassed, mainTotal, mainBar, met };
 }
 
 const pct = (x) => `${Math.round(x * 100)}%`;
@@ -67,15 +71,16 @@ const r = judge();
 console.log(`\nmain subject passed:        ${r.mainPassed}/${r.mainTotal} (bar ${r.mainBar})${r.mainMissed.length ? `   missed: ${r.mainMissed.join(' ')}` : ''}`);
 console.log(`wrong-quest passes:         ${r.wrong.length} (bar 0) ${r.wrong.join(' ')}`);
 console.log(`room/office/screen passes:  ${r.indoor.length} (bar 0) ${r.indoor.join(' ')}`);
+console.log(`selfie passes:              ${r.selfie.length} (bar 0) ${r.selfie.join(' ')}`);
 console.log(`known limit (indoor plant/dog passed): ${r.knownLimit.join(' ') || 'none'}`);
 console.log(r.met ? '\nBAR MET' : '\nBAR NOT MET');
 
 if (process.argv.includes('--sweep')) {
-  console.log('\nsweep: rows = outdoorMin, columns = questMin; cell = main passed / wrong / indoor; * = bar met');
+  console.log('\nsweep: rows = outdoorMin, columns = questMin; cell = main passed / wrong / indoor / selfie; * = bar met');
   for (const o of [0.25, 0.3, 0.35, 0.4, 0.45, 0.5]) {
     const cells = [0.1, 0.15, 0.2, 0.25, 0.3].map((q) => {
       const s = judge({ outdoorMin: o, questMin: q });
-      return `${q.toFixed(2)}: ${String(s.mainPassed).padStart(2)}/${s.wrong.length}/${s.indoor.length}${s.met ? '*' : ' '}`;
+      return `${q.toFixed(2)}: ${String(s.mainPassed).padStart(2)}/${s.wrong.length}/${s.indoor.length}/${s.selfie.length}${s.met ? '*' : ' '}`;
     });
     console.log(`${o.toFixed(2)}   ${cells.join('   ')}`);
   }

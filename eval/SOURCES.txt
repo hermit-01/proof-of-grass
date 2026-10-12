@@ -40,3 +40,5 @@ NEG-room-2.jpg  https://commons.wikimedia.org/wiki/File:Bedroom,_Interior_of_apa
 NEG-screen-1.jpg  https://commons.wikimedia.org/wiki/File:Child_interacts_with_laptop_screen_while_seated_at_a_desk.jpg  (CC BY 2.0)
 NEG-screen-2.jpg  https://commons.wikimedia.org/wiki/File:EFTA00000873_-_Control_room_with_multiple_monitors_a_laptop_and_office_supplies_on_a_desk_set_against_a_wall-mounted_screen_setup.jpg  (Public domain)
 NEG-screen-3.jpg  https://commons.wikimedia.org/wiki/File:Laptop_with_many_charts_on_screen_on_cluttered_desk.jpg  (CC0)
+selfie-1.jpg  https://commons.wikimedia.org/wiki/File:2025_11_JB.jpg  (CC BY-SA 4.0)
+selfie-2.jpg  https://commons.wikimedia.org/wiki/File:An_image_of_me.jpg  (CC BY-SA 4.0)

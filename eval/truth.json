@@ -37,5 +37,7 @@
   "NEG-room-2": { "scene": "in", "kind": "room", "main": null, "visible": [] },
   "NEG-screen-1": { "scene": "in", "kind": "screen", "main": null, "visible": [] },
   "NEG-screen-2": { "scene": "in", "kind": "screen", "main": null, "visible": [] },
-  "NEG-screen-3": { "scene": "in", "kind": "screen", "main": null, "visible": [] }
+  "NEG-screen-3": { "scene": "in", "kind": "screen", "main": null, "visible": [] },
+  "selfie-1": { "scene": "out", "kind": "selfie", "main": "person", "visible": ["sky", "tree", "grass"] },
+  "selfie-2": { "scene": "out", "kind": "selfie", "main": "person", "visible": ["sky"] }
 }
